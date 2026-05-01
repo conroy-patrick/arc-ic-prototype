@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Arc | Incentive Compensation Module</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  /* ===== Beghou Standard Colors ===== */
+  :root {
+    --beghou-navy: #0E1444;
+    --beghou-navy-2: #1A2363;
+    --beghou-pink: #EC2A6A;
+    --lavender-card: #EAEAF5;
+    --lavender-page: #F5F5FA;
+    --surface: #FFFFFF;
+    --border: #D9D9E3;
+    --text: #1F2330;
+    --muted: #6B7280;
+    --danger: #D32F2F;
+    --success: #2E7D32;
+    --success-bg: #C8E6C9;
+    --teal-header: #2C6E6B;
+    --chart-navy: #1A237E;
+    --chart-teal: #2C7873;
+    --chart-cyan: #4DD0E1;
+    --chart-peri: #9FA8DA;
+    --chart-mint: #80CBC4;
+    --chart-gray: #BDBDBD;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--lavender-page);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  /* ===== Layout ===== */
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ===== Module Sidebar (left rail with module nav) ===== */
+  .module-rail {
+    background: var(--beghou-navy);
+    color: #fff;
+    padding: 18px 14px;
+    position: sticky; top: 0; height: 100vh;
+    overflow-y: auto;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 6px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 14px;
+  }
+  .brand-spark {
+    width: 22px; height: 22px;
+    color: var(--beghou-pink);
+  }
+  .brand-text {
+    font-size: 20px; font-weight: 700; letter-spacing: -0.4px;
+  }
+  .rail-section-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: rgba(255,255,255,0.45);
+    padding: 14px 8px 6px;
+  }
+  .rail-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    font-weight: 500;
+    margin-bottom: 2px;
+    transition: background .15s;
+  }
+  .rail-item:hover { background: rgba(255,255,255,0.06); }
+  .rail-item.active {
+    background: var(--beghou-pink);
+    color: #fff;
+  }
+  .rail-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+  /* ===== Main column ===== */
+  .main { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* ===== Top header ===== */
+  .topbar {
+    height: 64px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 28px;
+    gap: 16px;
+    position: sticky; top: 0; z-index: 5;
+  }
+  .topbar-title {
+    font-size: 16px;
+    color: var(--text);
+  }
+  .topbar-title .pipe {
+    color: var(--border);
+    margin: 0 8px;
+  }
+  .topbar-spacer { flex: 1; }
+  .scope-pill {
+    background: var(--lavender-card);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--beghou-navy);
+    color: var(--beghou-navy);
+    display: grid; place-items: center;
+    font-weight: 700;
+    background: var(--surface);
+  }
+
+  /* ===== Page rail (right of module rail, left of content) ===== */
+  .page-shell {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    flex: 1;
+  }
+  .page-rail {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 14px 8px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .page-rail-item {
+    width: 44px; height: 44px;
+    display: grid; place-items: center;
+    border-radius: 8px;
+    color: var(--beghou-navy);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .page-rail-item:hover { background: var(--lavender-card); }
+  .page-rail-item.active {
+    background: var(--beghou-navy);
+    color: #fff;
+  }
+  .page-rail-item svg { width: 22px; height: 22px; }
+
+  /* ===== Content area ===== */
+  .content {
+    padding: 22px 32px 40px;
+    overflow-x: hidden;
+  }
+  .page-title-row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .page-title {
+    font-size: 22px; font-weight: 700;
+    letter-spacing: -0.3px;
+    margin: 0;
+  }
+  .page-title-accent {
+    width: 48px; height: 4px; background: var(--beghou-pink);
+    border-radius: 2px;
+    margin: 8px 0 14px;
+  }
+  .data-through {
+    color: var(--muted); font-size: 13px;
+  }
+  .disclaimer {
+    color: var(--danger); font-style: italic; font-size: 12px;
+    margin: 4px 0 14px;
+  }
+
+  /* ===== KPI strip ===== */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .kpi-card {
+    background: var(--lavender-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .kpi-label {
+    font-size: 11px; color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .kpi-value {
+    font-size: 18px; font-weight: 700;
+    color: var(--text);
+  }
+
+  /* ===== Cards ===== */
+  .grid {
+    display: grid; gap: 16px;
+  }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-bd { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  @media (max-width: 1300px) {
+    .grid-bd { grid-template-columns: 1fr 1fr; }
+    .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 2px rgba(14,20,68,.04);
+  }
+  .card.lav { background: var(--lavender-card); border-color: transparent; }
+  .card-title {
+    font-weight: 700; font-size: 14px;
+    margin: 0 0 12px;
+  }
+
+  /* ===== Tables ===== */
+  table.beghou {
+    width: 100%; border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.beghou thead th {
+    background: var(--lavender-card);
+    color: var(--text);
+    font-weight: 700;
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  table.beghou.teal thead th {
+    background: var(--teal-header);
+    color: #fff;
+    text-align: center;
+  }
+  table.beghou tbody td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  table.beghou tbody tr:nth-child(even) { background: var(--lavender-page); }
+  table.beghou tbody tr.highlight {
+    background: rgba(236, 42, 106, 0.10);
+    font-weight: 600;
+  }
+  .center { text-align: center; }
+  .right { text-align: right; }
+
+  /* ===== Buttons ===== */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 13px; font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .btn:hover { background: var(--lavender-card); }
+  .btn.primary {
+    background: var(--beghou-navy);
+    color: #fff;
+    border-color: var(--beghou-navy);
+  }
+  .btn.primary:hover { background: var(--beghou-navy-2); }
+  .btn.pink {
+    background: var(--beghou-pink);
+    color: #fff;
+    border-color: var(--beghou-pink);
+  }
+  .btn.pink:hover { background: #c81e58; }
+  .btn.success {
+    background: #5CB85C; color: #fff; border-color: #5CB85C;
+  }
+
+  /* ===== Pages ===== */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ===== Attestation page ===== */
+  .attest-card {
+    max-width: 640px;
+    margin: 80px auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 36px;
+    text-align: center;
+  }
+  .attest-link {
+    display: block;
+    color: var(--beghou-navy);
+    font-size: 16px;
+    font-weight: 700;
+    text-decoration: underline;
+    margin: 8px 0;
+  }
+  .attest-text {
+    color: var(--beghou-navy-2);
+    font-size: 16px;
+    margin: 24px 0;
+    line-height: 1.5;
+  }
+  .attest-actions {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    max-width: 280px;
+    margin: 24px auto 0;
+  }
+  .attest-actions .opts {
+    display: flex; justify-content: center; gap: 22px;
+    margin: 12px 0;
+  }
+  .attest-actions .opts label { cursor: pointer; }
+  .attest-actions .row-buttons {
+    display: flex; gap: 8px; justify-content: center;
+  }
+  .attest-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 12px;
+    font-size: 12px; font-weight: 600;
+  }
+  .status-pending { background: #FFF4E5; color: #A05A00; }
+  .status-complete { background: var(--success-bg); color: var(--success); }
+
+  /* ===== Pay breakdown ===== */
+  .breakdown { font-size: 13px; }
+  .breakdown .row {
+    display: flex; justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .breakdown .row.bold { font-weight: 700; }
+  .breakdown .row.section {
+    color: var(--muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding-top: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .breakdown .row.total {
+    border-top: 2px solid var(--beghou-navy);
+    border-bottom: none;
+    margin-top: 8px;
+    padding-top: 10px;
+    font-weight: 800;
+    color: var(--beghou-navy);
+  }
+
+  /* ===== What-if calculator ===== */
+  .calc-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .calc-input:focus {
+    outline: none;
+    border-color: var(--beghou-pink);
+    box-shadow: 0 0 0 3px rgba(236,42,106,.15);
+  }
+  .calc-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .calc-label { color: var(--text); }
+  .calc-value { font-weight: 700; min-width: 100px; text-align: right; }
+  .toggle-grp {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .toggle-grp button {
+    background: var(--surface);
+    border: none;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .toggle-grp button.active {
+    background: var(--beghou-navy);
+    color: #fff;
+  }
+
+  /* ===== Quarter cards ===== */
+  .archive-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .archive-row:hover { border-color: var(--beghou-pink); }
+  .archive-meta { display: flex; align-items: center; gap: 14px; }
+  .archive-quarter { font-size: 18px; font-weight: 700; }
+  .archive-dates { color: var(--muted); font-size: 13px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 12px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge.completed { background: var(--success-bg); color: var(--success); }
+  .badge.locked { background: var(--lavender-card); color: var(--muted); }
+
+  /* ===== Goal Refinement ===== */
+  .goal-status-pill {
+    display: inline-block; padding: 3px 10px;
+    border-radius: 12px; font-size: 11px; font-weight: 600;
+  }
+  .goal-status-pill.draft { background: #FFF4E5; color: #A05A00; }
+  .goal-status-pill.approved { background: var(--success-bg); color: var(--success); }
+  .goal-status-pill.review { background: rgba(26,35,126,.12); color: var(--chart-navy); }
+  .goal-input {
+    width: 90px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    text-align: right;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .goal-input.warn { border-color: var(--danger); background: #FFF1F1; }
+  .goal-delta { font-size: 12px; color: var(--muted); margin-left: 6px; }
+  .goal-delta.over { color: var(--danger); font-weight: 600; }
+  .audit-row {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .audit-row:last-child { border-bottom: none; }
+  .audit-meta { color: var(--muted); font-size: 12px; }
+
+  /* ===== MBO ===== */
+  .progress {
+    background: var(--lavender-card);
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .progress-bar {
+    background: var(--beghou-pink);
+    height: 100%;
+  }
+  .progress-bar.navy { background: var(--beghou-navy); }
+  .progress-bar.teal { background: var(--chart-teal); }
+
+  /* ===== Tabs ===== */
+  .tabs {
+    display: flex; gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin: 0 0 18px;
+  }
+  .tab {
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tab.active {
+    color: var(--beghou-navy);
+    border-bottom-color: var(--beghou-pink);
+  }
+
+  /* ===== Charts ===== */
+  .chart-box { position: relative; height: 220px; }
+
+  /* ===== Notification banner ===== */
+  .notif {
+    background: rgba(236,42,106,.08);
+    border-left: 4px solid var(--beghou-pink);
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+
+  /* ===== Misc ===== */
+  .mt-0 { margin-top: 0; } .mb-0 { margin-bottom: 0; }
+  .mt-2 { margin-top: 16px; } .mb-2 { margin-bottom: 16px; }
+  .row-flex { display: flex; gap: 12px; align-items: center; }
+  .stretch { flex: 1; }
+  .small { font-size: 12px; color: var(--muted); }
+  .pill {
+    display: inline-block; padding: 2px 8px;
+    border-radius: 10px; font-size: 11px; font-weight: 600;
+    background: var(--lavender-card); color: var(--beghou-navy);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ MODULE RAIL (left) ============ -->
+  <aside class="module-rail">
+    <div class="brand">
+      <svg class="brand-spark" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2 L14 9 L22 11 L14 13 L12 22 L10 13 L2 11 L10 9 Z"/>
+      </svg>
+      <span class="brand-text">beghou</span>
+    </div>
+
+    <div class="rail-section-label">Incentive Compensation</div>
+
+    <div class="rail-item active" data-dashboard="performance">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>
+      Performance Reports
+    </div>
+    <div class="rail-item" data-dashboard="goals">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+      Goal Refinement
+    </div>
+    <div class="rail-item" data-dashboard="mbo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+      MBO Management
+    </div>
+  </aside>
+
+  <!-- ============ MAIN COLUMN ============ -->
+  <main class="main">
+
+    <header class="topbar">
+      <strong>Arc</strong>
+      <span class="pipe">|</span>
+      <span class="topbar-title" id="topbar-title">Incentive Compensation · Performance Reports</span>
+      <div class="topbar-spacer"></div>
+      <span id="role-badge" class="badge completed" style="font-size:11px;padding:4px 10px">Field Rep</span>
+      <select class="scope-pill" id="scope">
+        <option data-role="Field Rep">T01001 — San Diego, CA (Rep)</option>
+        <option data-role="Field Manager">NP10100 — Southern CA (District Mgr)</option>
+        <option data-role="Field Manager">NP10000 — Southwest (Regional Dir)</option>
+        <option data-role="Home Office IC Manager">National — Home Office</option>
+      </select>
+      <div class="avatar">J</div>
+    </header>
+
+    <div class="page-shell">
+
+      <!-- ====== PERFORMANCE REPORTS DASHBOARD ====== -->
+      <div id="dashboard-performance" style="display: contents;">
+        <nav class="page-rail" id="perf-rail">
+          <div class="page-rail-item active" data-page="attestation" title="Plan Document Attestation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13l2 2 4-4"/></svg>
+          </div>
+          <div class="page-rail-item" data-page="scorecard" title="Performance Scorecard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="6" y="12" width="3" height="6"/><rect x="11" y="8" width="3" height="10"/><rect x="16" y="4" width="3" height="14"/></svg>
+          </div>
+          <div class="page-rail-item" data-page="calculator" title="What-If Calculator">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0M8 19h6"/></svg>
+          </div>
+          <div class="page-rail-item" data-page="awards" title="Annual Awards">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="6"/><path d="M9 14l-2 8 5-3 5 3-2-8"/></svg>
+          </div>
+          <div class="page-rail-item" data-page="archive" title="Historical Archives">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+          </div>
+        </nav>
+
+        <section class="content">
+
+          <!-- 1. Attestation Page -->
+          <div class="page active" id="page-attestation">
+            <div class="page-title-row">
+              <h1 class="page-title">Plan Document Attestation</h1>
+              <div class="data-through">Plan period: H1 2026</div>
+            </div>
+            <div class="page-title-accent"></div>
+
+            <div class="notif">
+              <strong>Action required.</strong> Please review and acknowledge your H1 2026 Incentive Compensation Plan before continuing to your scorecard.
+            </div>
+
+            <div class="attest-card">
+              <a href="#" class="attest-link">📄 Click here to read your H1 2026 plan document</a>
+              <a href="#" class="attest-link">📄 Click here to read the 2026 Terms and Conditions</a>
+              <p class="attest-text">
+                I attest that I have received and understand the<br/>
+                H1 2026 Incentive Compensation Plan and the<br/>
+                Terms &amp; Conditions
+              </p>
+
+              <div class="attest-actions">
+                <strong>I attest</strong>
+                <div class="opts">
+                  <label><input type="radio" name="attest" /> Yes</label>
+                  <label><input type="radio" name="attest" /> No</label>
+                </div>
+                <div class="row-buttons">
+                  <button class="btn primary">Save</button>
+                  <button class="btn">Cancel</button>
+                </div>
+              </div>
+            </div>
+
+            <h2 style="margin-top:32px;font-size:16px;">Attestation status — Home Office View</h2>
+            <p class="small">Audit log of attestation completion across the field force.</p>
+            <table class="beghou">
+              <thead><tr>
+                <th>Territory</th><th>Rep</th><th>Manager</th><th>Region</th>
+                <th class="center">Status</th><th>Acknowledged on</th>
+              </tr></thead>
+              <tbody>
+                <tr><td>T01001</td><td>John Doe</td><td>Jane Smith</td><td>Southern CA</td>
+                  <td class="center"><span class="attest-status status-pending">⏳ Pending</span></td><td>—</td></tr>
+                <tr><td>T01002</td><td>Meg Smith</td><td>Jane Smith</td><td>Southern CA</td>
+                  <td class="center"><span class="attest-status status-complete">✓ Acknowledged</span></td><td>Apr 22, 2026</td></tr>
+                <tr><td>T01003</td><td>Tom Davis</td><td>Jane Smith</td><td>Southern CA</td>
+                  <td class="center"><span class="attest-status status-complete">✓ Acknowledged</span></td><td>Apr 18, 2026</td></tr>
+                <tr><td>T01004</td><td>Chris Mueller</td><td>Jane Smith</td><td>Southern CA</td>
+                  <td class="center"><span class="attest-status status-pending">⏳ Pending</span></td><td>—</td></tr>
+                <tr><td>T01005</td><td>Hugh Grant</td><td>Jane Smith</td><td>Southern CA</td>
+                  <td class="center"><span class="attest-status status-complete">✓ Acknowledged</span></td><td>Apr 25, 2026</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 2. Scorecard Page -->
+          <div class="page" id="page-scorecard">
+            <div class="page-title-row">
+              <h1 class="page-title">Performance IC Report</h1>
+              <div class="row-flex">
+                <button class="btn">⬇ Export PDF</button>
+                <button class="btn">⬇ Export XLS</button>
+              </div>
+            </div>
+            <div class="page-title-accent"></div>
+            <p class="disclaimer">All calculations are directional. Final payouts are calculated at the end of the quarter.</p>
+            <div style="background:var(--lavender-card);padding:8px 14px;border-radius:6px;font-size:12px;margin-bottom:12px;display:inline-block">
+              <strong style="color:var(--beghou-navy)">Scope:</strong> <span id="scorecard-persona">Rep view — Territory T01001 only</span>
+            </div>
+
+            <div class="row-flex" style="margin-bottom:12px;font-size:12px;color:var(--muted)">
+              <span>🔄 Last refreshed: <strong style="color:var(--text)">Mon Apr 27, 2026 · 04:00 AM PT</strong></span>
+              <span>·</span>
+              <span>Next scheduled refresh: <strong style="color:var(--text)">Mon May 4, 2026 · 04:00 AM PT</strong></span>
+              <span>·</span>
+              <span>Cadence: <strong style="color:var(--text)">Weekly (Mondays)</strong></span>
+              <button class="btn" style="margin-left:auto">🔄 Refresh now</button>
+            </div>
+
+            <div class="kpi-strip">
+              <div class="kpi-card"><div class="kpi-label">Quarter</div><div class="kpi-value">Q2 2026</div></div>
+              <div class="kpi-card"><div class="kpi-label">Name</div><div class="kpi-value">John Doe</div></div>
+              <div class="kpi-card"><div class="kpi-label">Territory</div><div class="kpi-value">San Diego, CA</div></div>
+              <div class="kpi-card"><div class="kpi-label">Manager</div><div class="kpi-value">Jane Smith</div></div>
+              <div class="kpi-card"><div class="kpi-label">Projected Payout</div><div class="kpi-value">$17,600</div></div>
+              <div class="kpi-card"><div class="kpi-label">President's Club Rank</div><div class="kpi-value">3 of 48</div></div>
+              <div class="kpi-card"><div class="kpi-label">Data Through</div><div class="kpi-value">1/21/2026</div></div>
+            </div>
+
+            <div class="grid grid-bd">
+              <!-- Pay Breakdown card -->
+              <div class="card lav">
+                <h3 class="card-title">Pay Breakdown</h3>
+                <div class="breakdown">
+                  <div class="row bold"><span>IC Target</span><span>$11,250</span></div>
+                  <div class="row section"><span>Actual</span><span></span></div>
+                  <div class="row"><span>Product A Goal Payout</span><span>$0</span></div>
+                  <div class="row"><span>Product B Commission Payout</span><span>$2,000</span></div>
+                  <div class="row"><span>Product C Hybrid Payout</span><span>$0</span></div>
+                  <div class="row"><span>Eligibility</span><span>100%</span></div>
+                  <div class="row"><span>New Hire Guarantee</span><span>$0</span></div>
+                  <div class="row total"><span>Total Payout</span><span>$3,240</span></div>
+                  <div class="row section"><span>Projected</span><span></span></div>
+                  <div class="row"><span>Product A Goal Payout</span><span>$4,500</span></div>
+                  <div class="row"><span>Product B Commission Payout</span><span>$8,000</span></div>
+                  <div class="row"><span>Product C Hybrid Payout</span><span>$5,875</span></div>
+                  <div class="row"><span>Eligibility</span><span>100%</span></div>
+                  <div class="row"><span>New Hire Guarantee</span><span>$0</span></div>
+                  <div class="row total"><span>Total Projected</span><span>$18,375</span></div>
+                </div>
+              </div>
+
+              <!-- Product A Performance -->
+              <div class="card">
+                <h3 class="card-title">Product A — Performance</h3>
+                <div class="chart-box"><canvas id="chart-prodA-perf"></canvas></div>
+              </div>
+
+              <!-- Product A Attainment -->
+              <div class="card">
+                <h3 class="card-title">Product A — Attainment vs Pay Curve</h3>
+                <div class="chart-box"><canvas id="chart-prodA-curve"></canvas></div>
+              </div>
+
+              <!-- Product A Monthly Trend -->
+              <div class="card">
+                <h3 class="card-title">Product A — Monthly Trend</h3>
+                <div class="chart-box"><canvas id="chart-prodA-trend"></canvas></div>
+              </div>
+
+              <!-- Row 2: Product B -->
+              <div class="card">
+                <h3 class="card-title">Product B — Performance</h3>
+                <div class="chart-box"><canvas id="chart-prodB-perf"></canvas></div>
+              </div>
+              <div class="card">
+                <h3 class="card-title">Product B — Projected Performance</h3>
+                <div class="chart-box"><canvas id="chart-prodB-proj"></canvas></div>
+              </div>
+              <div class="card">
+                <h3 class="card-title">Product B — Monthly Trend</h3>
+                <div class="chart-box"><canvas id="chart-prodB-trend"></canvas></div>
+              </div>
+              <div class="card">
+                <h3 class="card-title">Product C — Commission</h3>
+                <div class="chart-box"><canvas id="chart-prodC-perf"></canvas></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. What-If Calculator Page -->
+          <div class="page" id="page-calculator">
+            <div class="page-title-row">
+              <h1 class="page-title">What-If Calculator</h1>
+              <div class="toggle-grp" id="calc-mode">
+                <button class="active" data-mode="forward">Forward (input volume)</button>
+                <button data-mode="reverse">Reverse (target earnings)</button>
+              </div>
+            </div>
+            <div class="page-title-accent"></div>
+            <p class="disclaimer">All calculations are directional. Final payouts are calculated at the end of the quarter.</p>
+
+            <div class="kpi-strip">
+              <div class="kpi-card"><div class="kpi-label">Quarter</div><div class="kpi-value">Q2 2026</div></div>
+              <div class="kpi-card"><div class="kpi-label">Territory</div><div class="kpi-value">San Diego, CA</div></div>
+              <div class="kpi-card"><div class="kpi-label">IC Target</div><div class="kpi-value" id="kpi-target">$11,250</div></div>
+              <div class="kpi-card"><div class="kpi-label">Quarter TRx Goal</div><div class="kpi-value" id="kpi-goal">127.0</div></div>
+              <div class="kpi-card"><div class="kpi-label">Plan Component</div><div class="kpi-value" id="kpi-component">Product A — Goal</div></div>
+            </div>
+
+            <div class="row-flex" style="margin-bottom:14px">
+              <span class="small">Simulate component:</span>
+              <div class="toggle-grp" id="component-mode">
+                <button class="active" data-component="A">Product A — Goal</button>
+                <button data-component="B">Product B — Commission</button>
+                <button data-component="C">Product C — Hybrid</button>
+                <button data-component="ALL">Total Plan (blended)</button>
+              </div>
+            </div>
+
+            <div class="grid grid-2">
+              <div class="card lav">
+                <h3 class="card-title">What-If Inputs <span class="small" id="component-tag" style="float:right;font-weight:400">Product A — Goal-based</span></h3>
+
+                <div class="row-flex" style="margin-bottom:12px">
+                  <span class="small stretch">Pre-populate volume with:</span>
+                  <div class="toggle-grp" id="prefill-mode">
+                    <button class="active" data-prefill="actual">Actual</button>
+                    <button data-prefill="projected">Projected</button>
+                  </div>
+                </div>
+
+                <div class="row-flex" style="margin-bottom:8px">
+                  <span class="small stretch">Drive calculation by:</span>
+                  <div class="toggle-grp" id="driver-mode">
+                    <button class="active" data-driver="trx">Volume</button>
+                    <button data-driver="attain">Attainment</button>
+                    <button data-driver="payout">Payout %</button>
+                  </div>
+                </div>
+
+                <div class="calc-row">
+                  <span class="calc-label">Estimated TRx</span>
+                  <input class="calc-input" id="calc-trx" type="number" value="100" style="max-width:120px"/>
+                </div>
+                <div class="calc-row">
+                  <span class="calc-label">Quarter TRx Goal</span>
+                  <span class="calc-value">127.0</span>
+                </div>
+                <div class="calc-row">
+                  <span class="calc-label">Estimated % Attainment</span>
+                  <input class="calc-input" id="calc-attain-input" type="number" value="78.7" disabled style="max-width:120px"/>
+                </div>
+                <div class="calc-row">
+                  <span class="calc-label">Estimated % Payout</span>
+                  <input class="calc-input" id="calc-payout-input" type="number" value="0" disabled style="max-width:120px"/>
+                </div>
+                <div class="calc-row" style="border-bottom:none">
+                  <span class="calc-label" style="font-weight:700">Estimated Total Earnings</span>
+                  <span class="calc-value" id="calc-earnings" style="color:var(--beghou-navy);font-size:18px">$0.00</span>
+                </div>
+
+                <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+                  <button class="btn primary" onclick="calcRecalc()">Recalculate</button>
+                  <button class="btn" onclick="setPrefill('actual')">Revert to Actual</button>
+                  <button class="btn" onclick="setPrefill('projected')">Revert to Projected</button>
+                </div>
+
+                <div id="reverse-block" style="display:none;margin-top:18px;padding-top:14px;border-top:1px solid var(--border)">
+                  <h4 class="card-title" style="margin-top:0">Reverse: I want to earn…</h4>
+                  <div class="calc-row">
+                    <span class="calc-label">Target earnings</span>
+                    <input class="calc-input" type="number" value="15000" id="rev-target" style="max-width:140px"/>
+                  </div>
+                  <div class="calc-row" style="border-bottom:none">
+                    <span class="calc-label">Required TRx</span>
+                    <span class="calc-value" id="rev-trx" style="color:var(--beghou-pink)">—</span>
+                  </div>
+                  <button class="btn pink" onclick="calcReverse()" style="margin-top:8px">Solve</button>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3 class="card-title">Pay Curve</h3>
+                <div class="chart-box" style="height:320px"><canvas id="chart-paycurve"></canvas></div>
+              </div>
+            </div>
+
+            <div class="card mt-2">
+              <h3 class="card-title">Pay Table</h3>
+              <table class="beghou teal">
+                <thead><tr><th>% Attainment</th><th>% Payout</th><th>$ Payout (vs $11,250 target)</th></tr></thead>
+                <tbody id="paytable-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 4. Annual Awards Page -->
+          <div class="page" id="page-awards">
+            <div class="page-title-row">
+              <h1 class="page-title">Annual Awards</h1>
+              <div class="row-flex">
+                <select class="btn">
+                  <option>President's Club</option>
+                  <option>Top Performer</option>
+                  <option>Rookie of the Year</option>
+                </select>
+                <select class="btn" id="award-role">
+                  <option value="rep">Reps (Territory)</option>
+                  <option value="dm">District Managers</option>
+                  <option value="rd">Regional Directors</option>
+                </select>
+              </div>
+            </div>
+            <div class="page-title-accent"></div>
+            <p class="disclaimer">Refreshed weekly. Highlighted rows are projected to qualify.</p>
+            <div class="row-flex" style="margin-bottom:12px;font-size:12px;color:var(--muted)">
+              <span>🔄 Last refreshed: <strong style="color:var(--text)">Mon Apr 27, 2026 · 04:00 AM PT</strong></span>
+              <span>·</span>
+              <span>Cadence: <strong style="color:var(--text)">Weekly (Mondays)</strong></span>
+            </div>
+
+            <div class="card">
+              <table class="beghou" id="awards-table">
+                <thead><tr>
+                  <th class="center">Rank</th><th>Territory</th><th>Rep</th><th>Region</th>
+                  <th class="right">QTD Attainment</th><th class="right">YTD Attainment</th><th class="right">Projected Payout</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- 5. Historical Archive Page -->
+          <div class="page" id="page-archive">
+            <div class="page-title-row">
+              <h1 class="page-title">Historical Archives</h1>
+            </div>
+            <div class="page-title-accent"></div>
+
+            <div class="kpi-strip">
+              <div class="kpi-card"><div class="kpi-label">Quarter</div><div class="kpi-value">Q2 2026</div></div>
+              <div class="kpi-card"><div class="kpi-label">Name</div><div class="kpi-value">John Doe</div></div>
+              <div class="kpi-card"><div class="kpi-label">Territory</div><div class="kpi-value">San Diego, CA</div></div>
+              <div class="kpi-card"><div class="kpi-label">Manager</div><div class="kpi-value">Jane Smith</div></div>
+              <div class="kpi-card"><div class="kpi-label">Projected Payout</div><div class="kpi-value">$17,600</div></div>
+              <div class="kpi-card"><div class="kpi-label">Data Through</div><div class="kpi-value">1/21/2026</div></div>
+            </div>
+
+            <p class="small">Showing the last 4 quarters of finalized scorecards. Each archive includes a unique URL with role-scoped access.</p>
+
+            <div id="archive-list"></div>
+          </div>
+
+        </section>
+      </div>
+
+      <!-- ====== GOAL REFINEMENT DASHBOARD ====== -->
+      <div id="dashboard-goals" style="display: none;">
+        <nav class="page-rail" id="goals-rail">
+          <div class="page-rail-item active" data-goals-page="editor" title="Goal Editor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+          </div>
+          <div class="page-rail-item" data-goals-page="audit" title="Audit Log">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div class="page-rail-item" data-goals-page="approvals" title="Approvals">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div class="page-rail-item" data-goals-page="disputes" title="Disputes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          </div>
+        </nav>
+        <section class="content" id="goals-content">
+
+          <!-- ===== Goal Editor sub-page ===== -->
+          <div class="page active" id="goals-page-editor">
+            <div class="page-title-row">
+              <h1 class="page-title">Goal Refinement — Editor</h1>
+              <div class="row-flex" id="goals-actions">
+                <button class="btn">Cancel</button>
+                <button class="btn primary">Submit for Approval</button>
+              </div>
+            </div>
+            <div class="page-title-accent"></div>
+
+            <div class="notif" id="goals-role-banner">
+              <strong>Constraint:</strong> District-level adjustments are limited to <strong>±10%</strong> of preliminary goals. Justification required for every change.
+            </div>
+
+            <div class="notif" id="goals-readonly-banner" style="display:none;background:rgba(107,114,128,0.08);border-left-color:var(--muted)">
+              <strong>View-only mode.</strong> Field Reps can review their goals but cannot edit. Submit a dispute via <em>Disputes</em> if you believe a goal is incorrect.
+            </div>
+
+            <div class="kpi-strip">
+              <div class="kpi-card"><div class="kpi-label">Cycle</div><div class="kpi-value">H1 2026</div></div>
+              <div class="kpi-card"><div class="kpi-label">Region</div><div class="kpi-value">Southern CA</div></div>
+              <div class="kpi-card"><div class="kpi-label">Status</div><div class="kpi-value"><span class="goal-status-pill draft">Draft</span></div></div>
+              <div class="kpi-card"><div class="kpi-label">Pending Approvals</div><div class="kpi-value">2 of 4</div></div>
+              <div class="kpi-card"><div class="kpi-label">Total Quarter TRx Goal</div><div class="kpi-value">2,610</div></div>
+            </div>
+
+            <div class="grid grid-2">
+              <div class="card" style="grid-column: span 2;">
+                <h3 class="card-title">Territory Goals — Editable</h3>
+                <table class="beghou">
+                  <thead><tr>
+                    <th>Territory ID</th><th>Territory Name</th><th>Rep</th>
+                    <th class="right">Preliminary Goal</th>
+                    <th class="right">Refined Goal</th>
+                    <th class="right">% Δ</th>
+                    <th>Justification</th>
+                    <th>Status</th>
+                  </tr></thead>
+                  <tbody id="goals-table-body"></tbody>
+                </table>
+              </div>
+
+              <div class="card" style="grid-column: span 2;">
+                <h3 class="card-title">Historic Performance Trend (Appendix G)</h3>
+                <div class="chart-box" style="height:260px"><canvas id="chart-historic"></canvas></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Audit Log sub-page ===== -->
+          <div class="page" id="goals-page-audit">
+            <div class="page-title-row">
+              <h1 class="page-title">Audit Log — Goal Changes</h1>
+              <div class="row-flex">
+                <input class="calc-input" placeholder="Filter by territory or user…" style="max-width:260px"/>
+                <select class="btn"><option>All change types</option><option>Increase</option><option>Decrease</option><option>Out-of-bounds</option></select>
+                <button class="btn">⬇ Export CSV</button>
+              </div>
+            </div>
+            <div class="page-title-accent"></div>
+            <p class="small">Every adjustment is logged with the user, timestamp, before/after values, % delta, and justification. The log is immutable — corrections must be made via a new change.</p>
+
+            <div class="kpi-strip">
+              <div class="kpi-card"><div class="kpi-label">Total changes (H1 2026)</div><div class="kpi-value">42</div></div>
+              <div class="kpi-card"><div class="kpi-label">By DMs</div><div class="kpi-value">31</div></div>
+              <div class="kpi-card"><div class="kpi-label">By Regional</div><div class="kpi-value">9</div></div>
+              <div class="kpi-card"><div class="kpi-label">Out-of-bounds (±10%)</div><div class="kpi-value">2</div></div>
+              <div class="kpi-card"><div class="kpi-label">Last activity</div><div class="kpi-value">Apr 28, 11:14a</div></div>
+            </div>
+
+            <div class="card">
+              <table class="beghou">
+                <thead><tr>
+                  <th>Timestamp</th><th>User</th><th>Role</th>
+                  <th>Territory</th><th class="right">Before</th><th class="right">After</th>
+                  <th class="right">% Δ</th><th>Justification</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td>Apr 28, 2026 · 11:14a</td><td>John Doe</td><td>Regional Dir</td><td>NP10202</td><td class="right">198</td><td class="right">202</td><td class="right">+2.0%</td><td>Adjust for Q1 momentum</td></tr>
+                  <tr><td>Apr 27, 2026 · 10:42a</td><td>Jane Smith</td><td>DM</td><td>NP10101 · San Diego S CA</td><td class="right">145</td><td class="right">152</td><td class="right">+4.8%</td><td>Pulled-through follow-up scripts in Q1</td></tr>
+                  <tr><td>Apr 27, 2026 · 09:55a</td><td>Jane Smith</td><td>DM</td><td>NP10105 · Inland OC CA</td><td class="right">154</td><td class="right">170</td><td class="right">+10.4%</td><td><span class="goal-delta over">⚠ Out of bounds</span> — Pulled-through formulary win</td></tr>
+                  <tr><td>Apr 26, 2026 · 03:17p</td><td>Jane Smith</td><td>DM</td><td>NP10103 · Escondido CA</td><td class="right">226</td><td class="right">215</td><td class="right">−4.9%</td><td>Loss of two key accounts</td></tr>
+                  <tr><td>Apr 25, 2026 · 09:08a</td><td>Jane Smith</td><td>DM</td><td>NP10102 · San Diego N CA</td><td class="right">180</td><td class="right">184</td><td class="right">+2.2%</td><td>New HCP onboarding</td></tr>
+                  <tr><td>Apr 24, 2026 · 04:30p</td><td>Alan Brooks</td><td>DM</td><td>NP10202B · Inland OC CA</td><td class="right">132</td><td class="right">128</td><td class="right">−3.0%</td><td>Territory split adjustment</td></tr>
+                  <tr><td>Apr 23, 2026 · 02:11p</td><td>Priya Mehta</td><td>DM</td><td>NP10401 · Phoenix Metro</td><td class="right">115</td><td class="right">119</td><td class="right">+3.5%</td><td>Two new IDN openings</td></tr>
+                  <tr><td>Apr 22, 2026 · 11:48a</td><td>Liam Park</td><td>DM</td><td>NP10701 · Denver West</td><td class="right">98</td><td class="right">96</td><td class="right">−2.0%</td><td>Reset for departing rep coverage</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ===== Approvals sub-page ===== -->
+          <div class="page" id="goals-page-approvals">
+            <div class="page-title-row">
+              <h1 class="page-title">Approvals</h1>
+              <div class="row-flex">
+                <button class="btn">Reject all selected</button>
+                <button class="btn primary">Approve selected</button>
+              </div>
+            </div>
+            <div class="page-title-accent"></div>
+            <p class="small">Multi-level routing: District Manager → Regional Director → National Director → IC Home Office. Configurable per client; not all clients require multi-level flows.</p>
+
+            <div class="kpi-strip">
+              <div class="kpi-card"><div class="kpi-label">My queue</div><div class="kpi-value">3</div></div>
+              <div class="kpi-card"><div class="kpi-label">Awaiting upstream</div><div class="kpi-value">5</div></div>
+              <div class="kpi-card"><div class="kpi-label">Approved (cycle)</div><div class="kpi-value">17</div></div>
+              <div class="kpi-card"><div class="kpi-label">Avg time-to-approve</div><div class="kpi-value">1.4 days</div></div>
+            </div>
+
+            <div class="grid grid-2">
+
+              <div class="card" style="grid-column: span 2;">
+                <h3 class="card-title">In My Queue</h3>
+                <table class="beghou">
+                  <thead><tr>
+                    <th><input type="checkbox"/></th>
+                    <th>Submitted by</th><th>Region</th>
+                    <th class="right">Territories</th><th class="right">Net Δ</th>
+                    <th>Submitted</th><th>Action</th>
+                  </tr></thead>
+                  <tbody>
+                    <tr><td><input type="checkbox"/></td><td>Jane Smith (DM)</td><td>Southern CA</td><td class="right">6</td><td class="right">+2.1%</td><td>Apr 27, 2026</td><td><button class="btn primary">Review</button></td></tr>
+                    <tr><td><input type="checkbox"/></td><td>Alan Brooks (DM)</td><td>Inland OC CA</td><td class="right">5</td><td class="right">−1.4%</td><td>Apr 26, 2026</td><td><button class="btn primary">Review</button></td></tr>
+                    <tr><td><input type="checkbox"/></td><td>Priya Mehta (DM)</td><td>Arizona Metro</td><td class="right">4</td><td class="right">+3.2%</td><td>Apr 25, 2026</td><td><button class="btn primary">Review</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="card">
+                <h3 class="card-title">Approval Chain — Southern CA Submission</h3>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <div class="row-flex"><span class="goal-status-pill approved">✓</span><div class="stretch"><strong>District Manager — Jane Smith</strong><div class="small">Submitted Apr 27, 2026 · 11:02a</div></div></div>
+                  <div class="row-flex"><span class="goal-status-pill approved">✓</span><div class="stretch"><strong>Regional Director — John Doe</strong><div class="small">Approved Apr 28, 2026 · 09:14a</div></div></div>
+                  <div class="row-flex"><span class="goal-status-pill review">⋯</span><div class="stretch"><strong>National Director — Pending</strong><div class="small">Awaiting review · escalated 0 days</div></div></div>
+                  <div class="row-flex"><span class="goal-status-pill draft">○</span><div class="stretch"><strong>IC Home Office — Final lock</strong><div class="small">After national approval</div></div></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3 class="card-title">Workflow Configuration</h3>
+                <div class="calc-row"><span>Multi-level approval</span><span class="pill">Enabled</span></div>
+                <div class="calc-row"><span>Levels required</span><span class="pill">DM → RD → ND → IC Ops</span></div>
+                <div class="calc-row"><span>Auto-approve within ±2%</span><span class="pill">Off</span></div>
+                <div class="calc-row"><span>Escalate after</span><span class="pill">3 business days</span></div>
+                <div class="calc-row" style="border-bottom:none"><span>Out-of-bounds (>±10%) routing</span><span class="pill">Adds VP Sales tier</span></div>
+              </div>
+
+              <div class="card" style="grid-column: span 2;">
+                <h3 class="card-title">Recently Approved / Rejected</h3>
+                <table class="beghou">
+                  <thead><tr><th>Region</th><th>Submitted by</th><th class="right">Net Δ</th><th>Decision</th><th>Decided by</th><th>On</th></tr></thead>
+                  <tbody>
+                    <tr><td>Northeast</td><td>Maya Patel (DM)</td><td class="right">+1.8%</td><td><span class="goal-status-pill approved">Approved</span></td><td>Maya's RD</td><td>Apr 22, 2026</td></tr>
+                    <tr><td>Pacific NW</td><td>Sara Lin (DM)</td><td class="right">+4.2%</td><td><span class="goal-status-pill approved">Approved</span></td><td>Sara's RD</td><td>Apr 20, 2026</td></tr>
+                    <tr><td>Central</td><td>Thomas Reyes (DM)</td><td class="right">+11.6%</td><td><span class="goal-status-pill draft">Rejected (out of bounds)</span></td><td>RD</td><td>Apr 18, 2026</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ===== Disputes sub-page ===== -->
+          <div class="page" id="goals-page-disputes">
+            <div class="page-title-row">
+              <h1 class="page-title">Dispute / Inquiry Management</h1>
+              <div class="row-flex">
+                <button class="btn">⬇ Export</button>
+                <button class="btn primary">+ New inquiry</button>
+              </div>
+            </div>
+            <div class="page-title-accent"></div>
+            <p class="small">A workflow for reps to question or challenge their goals, with tracking and resolution by managers/admins.</p>
+
+            <div class="kpi-strip">
+              <div class="kpi-card"><div class="kpi-label">Open</div><div class="kpi-value">3</div></div>
+              <div class="kpi-card"><div class="kpi-label">Under review</div><div class="kpi-value">2</div></div>
+              <div class="kpi-card"><div class="kpi-label">Resolved (H1)</div><div class="kpi-value">14</div></div>
+              <div class="kpi-card"><div class="kpi-label">Avg resolution</div><div class="kpi-value">3.1 days</div></div>
+              <div class="kpi-card"><div class="kpi-label">Aging > 5d</div><div class="kpi-value" style="color:var(--danger)">1</div></div>
+            </div>
+
+            <div class="grid grid-2">
+
+              <div class="card" style="grid-column: span 2;">
+                <h3 class="card-title">Active Inquiries</h3>
+                <table class="beghou">
+                  <thead><tr>
+                    <th>#</th><th>Submitted by</th><th>Territory</th><th>Issue</th>
+                    <th>Status</th><th>Owner</th><th>Age</th><th>Last update</th><th>Action</th>
+                  </tr></thead>
+                  <tbody>
+                    <tr><td>D-1042</td><td>Meg Smith</td><td>NP10101</td><td>Q1 baseline excluded sample drop weeks</td><td><span class="goal-status-pill review">Under review</span></td><td>IC Ops</td><td>2d</td><td>Apr 27</td><td><button class="btn primary">Open</button></td></tr>
+                    <tr><td>D-1041</td><td>Hugh Grant</td><td>NP10103</td><td>Lost two HCPs to comp territory</td><td><span class="goal-status-pill approved">Resolved</span></td><td>Jane Smith</td><td>5d</td><td>Apr 24</td><td><button class="btn">View</button></td></tr>
+                    <tr><td>D-1037</td><td>Brad Clarke</td><td>NP10104</td><td>HI weather event impacted call coverage</td><td><span class="goal-status-pill draft">New</span></td><td>—</td><td>6d</td><td>Apr 23</td><td><button class="btn primary">Triage</button></td></tr>
+                    <tr><td>D-1036</td><td>Eric Jones</td><td>NP10105</td><td>Goal increase exceeds historical capacity</td><td><span class="goal-status-pill review">Under review</span></td><td>Jane Smith</td><td>7d</td><td>Apr 22</td><td><button class="btn primary">Open</button></td></tr>
+                    <tr><td>D-1035</td><td>Tom Davis</td><td>NP10102A</td><td>HCP alignment dispute (mis-attributed prescriber)</td><td><span class="goal-status-pill draft">New</span></td><td>—</td><td>8d</td><td>Apr 21</td><td><button class="btn primary">Triage</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="card">
+                <h3 class="card-title">Selected Inquiry — D-1042</h3>
+                <div class="calc-row"><span>Submitted by</span><span><strong>Meg Smith</strong> (NP10101)</span></div>
+                <div class="calc-row"><span>Submitted</span><span>Apr 27, 2026</span></div>
+                <div class="calc-row"><span>Category</span><span>Baseline correction</span></div>
+                <div class="calc-row"><span>Owner</span><span>IC Ops · queued</span></div>
+                <div class="calc-row" style="border-bottom:none"><span>Status</span><span><span class="goal-status-pill review">Under review</span></span></div>
+
+                <h4 style="margin:14px 0 8px;font-size:13px">Conversation</h4>
+                <div class="audit-row"><strong>Meg Smith</strong> · Apr 27, 2026<div class="audit-meta">"Q1 baseline didn't account for the 3-week sample-drop holiday in late Feb. Requesting recalc against rolling 4-quarter actuals."</div></div>
+                <div class="audit-row"><strong>Jane Smith (DM)</strong> · Apr 27, 2026<div class="audit-meta">"Routed to IC Ops for baseline review. Adding historical attainment file."</div></div>
+                <div class="audit-row" style="border-bottom:none"><strong>IC Ops</strong> · Apr 28, 2026<div class="audit-meta">"Confirmed sample-drop weeks excluded from data feed; re-running baseline tonight."</div></div>
+
+                <div style="margin-top:10px;display:flex;gap:6px"><input class="calc-input" placeholder="Add a note…" style="flex:1"/><button class="btn primary">Send</button></div>
+              </div>
+
+              <div class="card">
+                <h3 class="card-title">Resolution Mix (last 90 days)</h3>
+                <div class="calc-row"><span>Approved (goal adjusted)</span><span class="pill">9</span></div>
+                <div class="calc-row"><span>Approved (data correction)</span><span class="pill">3</span></div>
+                <div class="calc-row"><span>Declined</span><span class="pill">2</span></div>
+                <div class="calc-row" style="border-bottom:none"><span>Withdrawn by submitter</span><span class="pill">1</span></div>
+                <div style="margin-top:14px" class="chart-box" style="height:160px"><canvas id="chart-disputes"></canvas></div>
+              </div>
+
+            </div>
+          </div>
+
+        </section>
+      </div>
+
+      <!-- ====== MBO MANAGEMENT DASHBOARD ====== -->
+      <div id="dashboard-mbo" style="display: none;">
+        <nav class="page-rail" id="mbo-rail">
+          <div class="page-rail-item active" data-mbo-page="my" title="My MBOs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div class="page-rail-item" data-mbo-page="reviewer" title="Reviewer Workflow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 11V7a4 4 0 00-8 0v4M5 11h14v10H5z"/></svg>
+          </div>
+          <div class="page-rail-item" data-mbo-page="admin" title="Admin — Define MBOs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51"/></svg>
+          </div>
+        </nav>
+
+        <section class="content" id="mbo-content">
+          <div class="page active" id="mbo-page-my">
+          <div class="page-title-row">
+            <h1 class="page-title">MBO Management</h1>
+            <div class="row-flex">
+              <button class="btn">Save Draft</button>
+              <button class="btn primary">Submit MBOs for Review</button>
+            </div>
+          </div>
+          <div class="page-title-accent"></div>
+
+          <div class="notif">
+            <strong>Reminder:</strong> Q2 2026 MBO submissions are due by <strong>July 5, 2026</strong>. 2 of 4 MBOs are still in draft.
+            <span class="small" style="margin-left:8px">⏰ Auto-reminders go out 14, 7, and 2 days before deadline</span>
+          </div>
+
+          <div class="tabs">
+            <div class="tab active">My MBOs (Q2 2026)</div>
+            <div class="tab">Team MBOs (Mgr View)</div>
+            <div class="tab">Blended Payout</div>
+            <div class="tab">History</div>
+          </div>
+
+          <div class="kpi-strip">
+            <div class="kpi-card"><div class="kpi-label">Quarter</div><div class="kpi-value">Q2 2026</div></div>
+            <div class="kpi-card"><div class="kpi-label">Quantitative %</div><div class="kpi-value">75%</div></div>
+            <div class="kpi-card"><div class="kpi-label">Qualitative (MBO) %</div><div class="kpi-value">25%</div></div>
+            <div class="kpi-card"><div class="kpi-label">MBO Score</div><div class="kpi-value">68%</div></div>
+            <div class="kpi-card"><div class="kpi-label">Blended Payout</div><div class="kpi-value">$15,890</div></div>
+          </div>
+
+          <div class="grid grid-2">
+
+            <div class="card" style="grid-column: span 2;">
+              <h3 class="card-title">My MBOs</h3>
+              <table class="beghou">
+                <thead><tr>
+                  <th>MBO</th><th>Description</th><th class="right">Weight</th>
+                  <th class="right">Target</th><th class="right">Actual</th>
+                  <th>Progress</th><th>Status</th>
+                </tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Contracts signed</strong></td>
+                    <td>Net-new IDN contracts supporting Product B launch</td>
+                    <td class="right">35%</td>
+                    <td class="right">8</td><td class="right">6</td>
+                    <td>
+                      <div>75%</div>
+                      <div class="progress"><div class="progress-bar navy" style="width:75%"></div></div>
+                    </td>
+                    <td><span class="goal-status-pill review">In progress</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Calls made — top decile</strong></td>
+                    <td>Avg 9 calls / decile-10 HCP / quarter</td>
+                    <td class="right">25%</td>
+                    <td class="right">540</td><td class="right">478</td>
+                    <td>
+                      <div>89%</div>
+                      <div class="progress"><div class="progress-bar teal" style="width:89%"></div></div>
+                    </td>
+                    <td><span class="goal-status-pill review">In progress</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Speaker programs</strong></td>
+                    <td>Host or attend ≥2 speaker programs</td>
+                    <td class="right">20%</td>
+                    <td class="right">2</td><td class="right">2</td>
+                    <td>
+                      <div>100%</div>
+                      <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+                    </td>
+                    <td><span class="goal-status-pill approved">Met</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Compliance training</strong></td>
+                    <td>Complete H1 2026 compliance modules</td>
+                    <td class="right">20%</td>
+                    <td class="right">100%</td><td class="right">100%</td>
+                    <td>
+                      <div>100%</div>
+                      <div class="progress"><div class="progress-bar" style="width:100%"></div></div>
+                    </td>
+                    <td><span class="goal-status-pill approved">Met</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">Blended Payout Logic</h3>
+              <div class="breakdown">
+                <div class="row"><span>IC Target</span><span>$22,500</span></div>
+                <div class="row section"><span>Quantitative (75%)</span><span></span></div>
+                <div class="row"><span>Sub-target</span><span>$16,875</span></div>
+                <div class="row"><span>Quant attainment</span><span>92.2%</span></div>
+                <div class="row"><span>Quant payout</span><span>$15,560</span></div>
+                <div class="row section"><span>Qualitative MBO (25%)</span><span></span></div>
+                <div class="row"><span>Sub-target</span><span>$5,625</span></div>
+                <div class="row"><span>MBO score</span><span>68.0%</span></div>
+                <div class="row"><span>MBO payout</span><span>$3,825</span></div>
+                <div class="row total"><span>Blended Total</span><span>$19,385</span></div>
+              </div>
+              <div style="margin-top:10px" class="chart-box"><canvas id="chart-blend"></canvas></div>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title">Reviewer Workflow</h3>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="row-flex">
+                  <span class="goal-status-pill approved">✓</span>
+                  <div class="stretch"><strong>Self-rating</strong><div class="small">Submitted Apr 28, 2026</div></div>
+                </div>
+                <div class="row-flex">
+                  <span class="goal-status-pill review">⋯</span>
+                  <div class="stretch"><strong>Manager review — Jane Smith</strong><div class="small">Pending</div></div>
+                </div>
+                <div class="row-flex">
+                  <span class="goal-status-pill draft">○</span>
+                  <div class="stretch"><strong>HR / Legal sign-off</strong><div class="small">After manager approval</div></div>
+                </div>
+                <div class="row-flex">
+                  <span class="goal-status-pill draft">○</span>
+                  <div class="stretch"><strong>Final payout calculation</strong><div class="small">By IC Home Office</div></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          </div><!-- /mbo-page-my -->
+
+          <!-- Reviewer Workflow page -->
+          <div class="page" id="mbo-page-reviewer">
+            <div class="page-title-row">
+              <h1 class="page-title">Reviewer Workflow — Team MBO Sign-off</h1>
+              <div class="row-flex">
+                <button class="btn">Bulk approve</button>
+                <button class="btn primary">Submit reviews</button>
+              </div>
+            </div>
+            <div class="page-title-accent"></div>
+            <p class="small">As a District Manager, review your team's submitted MBOs, score them, and route to HR/Legal.</p>
+
+            <div class="card mt-2">
+              <table class="beghou">
+                <thead><tr>
+                  <th>Rep</th><th>Territory</th><th>MBOs submitted</th>
+                  <th class="right">Self-rating</th><th class="right">Mgr score</th>
+                  <th>Status</th><th>Action</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td>Meg Smith</td><td>NP10101</td><td>4 / 4</td><td class="right">75%</td><td class="right"><input class="goal-input" value="78"/></td><td><span class="goal-status-pill review">Mgr review</span></td><td><button class="btn primary">Open</button></td></tr>
+                  <tr><td>Eric Jones</td><td>NP10101B</td><td>4 / 4</td><td class="right">82%</td><td class="right"><input class="goal-input" value="80"/></td><td><span class="goal-status-pill review">Mgr review</span></td><td><button class="btn primary">Open</button></td></tr>
+                  <tr><td>Tom Davis</td><td>NP10102A</td><td>3 / 4</td><td class="right">—</td><td class="right">—</td><td><span class="goal-status-pill draft">Awaiting rep</span></td><td><button class="btn">Nudge</button></td></tr>
+                  <tr><td>Chris Mueller</td><td>NP10102B</td><td>4 / 4</td><td class="right">90%</td><td class="right">90%</td><td><span class="goal-status-pill approved">HR sign-off</span></td><td><button class="btn">View</button></td></tr>
+                  <tr><td>Hugh Grant</td><td>NP10103A</td><td>4 / 4</td><td class="right">68%</td><td class="right">70%</td><td><span class="goal-status-pill approved">Final</span></td><td><button class="btn">View</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Admin page -->
+          <div class="page" id="mbo-page-admin">
+            <div class="page-title-row">
+              <h1 class="page-title">Admin — Define MBOs</h1>
+              <div class="row-flex">
+                <button class="btn">+ Import template</button>
+                <button class="btn primary">+ New MBO</button>
+              </div>
+            </div>
+            <div class="page-title-accent"></div>
+            <p class="small">Define MBOs per role or team. Set targets, weights, optional data inputs, and reminder cadences.</p>
+
+            <div class="card mt-2">
+              <table class="beghou">
+                <thead><tr>
+                  <th>MBO</th><th>Applies to</th><th class="right">Default weight</th>
+                  <th>Data input</th><th>Cadence</th><th>Status</th><th>Actions</th>
+                </tr></thead>
+                <tbody>
+                  <tr><td>Contracts signed</td><td>All Reps</td><td class="right">35%</td><td>CRM (Veeva)</td><td>Quarterly</td><td><span class="goal-status-pill approved">Active</span></td><td><button class="btn">Edit</button> <button class="btn">Archive</button></td></tr>
+                  <tr><td>Calls — top decile</td><td>All Reps</td><td class="right">25%</td><td>Call reporting</td><td>Quarterly</td><td><span class="goal-status-pill approved">Active</span></td><td><button class="btn">Edit</button> <button class="btn">Archive</button></td></tr>
+                  <tr><td>Speaker programs</td><td>Reps + DMs</td><td class="right">20%</td><td>Manual</td><td>Half-year</td><td><span class="goal-status-pill approved">Active</span></td><td><button class="btn">Edit</button> <button class="btn">Archive</button></td></tr>
+                  <tr><td>Compliance training</td><td>All Roles</td><td class="right">20%</td><td>LMS</td><td>Half-year</td><td><span class="goal-status-pill approved">Active</span></td><td><button class="btn">Edit</button> <button class="btn">Archive</button></td></tr>
+                  <tr><td>District coaching plan</td><td>DMs only</td><td class="right">30%</td><td>Manual</td><td>Quarterly</td><td><span class="goal-status-pill draft">Draft</span></td><td><button class="btn">Edit</button> <button class="btn">Activate</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="grid grid-2 mt-2">
+              <div class="card">
+                <h3 class="card-title">Reminder Cadence</h3>
+                <div class="calc-row"><span>14 days before deadline</span><span class="pill">On</span></div>
+                <div class="calc-row"><span>7 days before deadline</span><span class="pill">On</span></div>
+                <div class="calc-row"><span>2 days before deadline</span><span class="pill">On</span></div>
+                <div class="calc-row" style="border-bottom:none"><span>After deadline (escalate to mgr)</span><span class="pill">On</span></div>
+              </div>
+              <div class="card">
+                <h3 class="card-title">Approval Routing</h3>
+                <div class="calc-row"><span>Step 1 — Self submission</span><span class="small">Rep</span></div>
+                <div class="calc-row"><span>Step 2 — Manager review</span><span class="small">DM</span></div>
+                <div class="calc-row"><span>Step 3 — HR / Legal sign-off</span><span class="small">HR partner</span></div>
+                <div class="calc-row" style="border-bottom:none"><span>Step 4 — Final payout calc</span><span class="small">IC Home Office</span></div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  // ===================================================================
+  //  Chart.js global defaults — Beghou colors
+  // ===================================================================
+  Chart.defaults.font.family = "'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif";
+  Chart.defaults.font.size = 11;
+  Chart.defaults.color = '#1F2330';
+  Chart.defaults.plugins.legend.labels.boxWidth = 10;
+
+  const C = {
+    navy:   '#0E1444',
+    pink:   '#EC2A6A',
+    cnavy:  '#1A237E',
+    teal:   '#2C7873',
+    cyan:   '#4DD0E1',
+    peri:   '#9FA8DA',
+    mint:   '#80CBC4',
+    gray:   '#BDBDBD',
+  };
+
+  // ===================================================================
+  //  Module / Dashboard / Page navigation
+  // ===================================================================
+  const dashboardMap = {
+    performance: 'Performance Reports',
+    goals: 'Goal Refinement',
+    mbo: 'MBO Management',
+  };
+  document.querySelectorAll('.rail-item[data-dashboard]').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.rail-item[data-dashboard]').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      const target = el.dataset.dashboard;
+      ['performance','goals','mbo'].forEach(k => {
+        document.getElementById('dashboard-'+k).style.display = (k===target) ? 'contents' : 'none';
+      });
+      document.getElementById('topbar-title').textContent =
+        'Incentive Compensation · ' + dashboardMap[target];
+    });
+  });
+
+  document.querySelectorAll('#perf-rail .page-rail-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('#perf-rail .page-rail-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      const target = el.dataset.page;
+      document.querySelectorAll('#dashboard-performance .page').forEach(p => p.classList.remove('active'));
+      document.getElementById('page-'+target).classList.add('active');
+    });
+  });
+
+  // Role / persona switcher tied to scope dropdown
+  function applyRolePermissions(role) {
+    document.getElementById('role-badge').textContent = role;
+
+    // ---- Goal Refinement: role-based editing access ----
+    const isRep = role === 'Field Rep';
+    const goalsActions = document.getElementById('goals-actions');
+    if (goalsActions) goalsActions.style.display = isRep ? 'none' : 'flex';
+    const goalsBanner = document.getElementById('goals-role-banner');
+    const goalsReadOnly = document.getElementById('goals-readonly-banner');
+    if (goalsBanner)   goalsBanner.style.display   = isRep ? 'none' : 'block';
+    if (goalsReadOnly) goalsReadOnly.style.display = isRep ? 'block' : 'none';
+    document.querySelectorAll('#goals-table-body input.goal-input').forEach(inp => {
+      inp.disabled = isRep;
+      inp.style.opacity = isRep ? '0.6' : '1';
+    });
+
+    // ---- Annual Awards: scope what role-tier the user can see ----
+    // Reps see only Rep ranks. DMs can see Rep+DM. RDs see all. Home Office sees all.
+    const awardsRole = document.getElementById('award-role');
+    if (awardsRole) {
+      const allowed =
+        role === 'Field Rep' ? ['rep'] :
+        role === 'Field Manager' ? ['rep','dm'] :
+        ['rep','dm','rd'];
+      Array.from(awardsRole.options).forEach(o => {
+        o.disabled = !allowed.includes(o.value);
+        o.style.color = o.disabled ? 'var(--muted)' : '';
+      });
+      if (!allowed.includes(awardsRole.value)) {
+        awardsRole.value = allowed[0];
+        renderAwards(allowed[0]);
+      }
+    }
+
+    // ---- Performance Scorecard: persona context line ----
+    const ctx = document.getElementById('scorecard-persona');
+    if (ctx) {
+      ctx.textContent =
+        role === 'Field Rep' ? 'Rep view — Territory T01001 only' :
+        role === 'Field Manager' ? 'Manager view — your team aggregate' :
+        'Home Office view — National roll-up';
+    }
+
+    // ---- MBO Admin only available to Home Office ----
+    const adminItem = document.querySelector('#mbo-rail .page-rail-item[data-mbo-page="admin"]');
+    if (adminItem) {
+      const allow = role === 'Home Office IC Manager';
+      adminItem.style.opacity = allow ? '1' : '0.35';
+      adminItem.style.pointerEvents = allow ? 'auto' : 'none';
+      adminItem.title = allow ? 'Admin — Define MBOs' : 'Admin — Home Office only';
+    }
+  }
+
+  document.getElementById('scope').addEventListener('change', e => {
+    const opt = e.target.options[e.target.selectedIndex];
+    applyRolePermissions(opt.dataset.role || 'Field Rep');
+  });
+
+  // Goals sub-page navigation
+  document.querySelectorAll('#goals-rail .page-rail-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('#goals-rail .page-rail-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      const target = el.dataset.goalsPage;
+      document.querySelectorAll('#goals-content .page').forEach(p => p.classList.remove('active'));
+      document.getElementById('goals-page-'+target).classList.add('active');
+    });
+  });
+
+  // MBO sub-page navigation
+  document.querySelectorAll('#mbo-rail .page-rail-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('#mbo-rail .page-rail-item').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+      const target = el.dataset.mboPage;
+      document.querySelectorAll('#mbo-content .page').forEach(p => p.classList.remove('active'));
+      document.getElementById('mbo-page-'+target).classList.add('active');
+    });
+  });
+
+  // ===================================================================
+  //  Charts: Performance Scorecard
+  // ===================================================================
+  // Product A — performance horizontal bars (TRx, QTD Goal, QTR Goal)
+  new Chart(document.getElementById('chart-prodA-perf'), {
+    type:'bar',
+    data:{
+      labels:['Series 1'],
+      datasets:[
+        {label:'TRx', data:[29.3], backgroundColor:C.peri},
+        {label:'QTD Goal', data:[32.2], backgroundColor:C.mint},
+        {label:'QTR Goal', data:[127.0], backgroundColor:C.teal},
+      ]
+    },
+    options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{y:{display:false}}}
+  });
+
+  // Product A — pay curve with proj & actual attainment markers
+  new Chart(document.getElementById('chart-prodA-curve'), {
+    type:'line',
+    data:{
+      labels:['0%','25%','50%','75%','85%','100%','125%','150%','175%','200%'],
+      datasets:[
+        {label:'Pay Curve', data:[0,0,0,0,50,100,140,160,170,180],
+         borderColor:C.navy, backgroundColor:C.navy, tension:0.2,
+         pointBackgroundColor:C.navy, fill:false},
+        {label:'Proj. Attain', data:[null,null,null,null,null,null,140,null,null,null],
+         pointBackgroundColor:C.peri, pointRadius:8, showLine:false, borderColor:C.peri},
+        {label:'Actual Attain', data:[null,null,30,null,null,null,null,null,null,null],
+         pointBackgroundColor:C.teal, pointRadius:8, showLine:false, borderColor:C.teal},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{y:{title:{display:true,text:'% to Target'}}}}
+  });
+
+  // Product A — Monthly TRx vs Goal
+  new Chart(document.getElementById('chart-prodA-trend'), {
+    type:'bar',
+    data:{
+      labels:['Jan','Feb','Mar'],
+      datasets:[
+        {label:'TRx', data:[29.3, 0, 0], backgroundColor:C.peri},
+        {label:'Goal', data:[43, 39, 43], backgroundColor:C.teal},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+  });
+
+  // Product B — performance (stacked tiers)
+  new Chart(document.getElementById('chart-prodB-perf'), {
+    type:'bar',
+    data:{
+      labels:['Series 1'],
+      datasets:[
+        {label:'$200/TRx', data:[10], backgroundColor:C.cnavy},
+        {label:'$300/TRx', data:[0], backgroundColor:C.peri},
+        {label:'$400/TRx', data:[0], backgroundColor:C.gray},
+        {label:'$500/TRx', data:[0], backgroundColor:C.mint},
+      ]
+    },
+    options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}},
+      scales:{x:{stacked:true}, y:{stacked:true, display:false}}}
+  });
+
+  // Product B — projected
+  new Chart(document.getElementById('chart-prodB-proj'), {
+    type:'bar',
+    data:{
+      labels:['$200/TRx','$300/TRx','$400/TRx','$500/TRx'],
+      datasets:[
+        {label:'Actual', data:[10,0,0,0], backgroundColor:C.cnavy},
+        {label:'Projected', data:[5,10,5,0], backgroundColor:C.gray},
+      ]
+    },
+    options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}}}
+  });
+
+  // Product B — monthly trend
+  new Chart(document.getElementById('chart-prodB-trend'), {
+    type:'bar',
+    data:{
+      labels:['Jan','Feb','Mar'],
+      datasets:[{label:'TRx', data:[10,0,0], backgroundColor:C.cnavy}]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+  });
+
+  // Product C — commission
+  new Chart(document.getElementById('chart-prodC-perf'), {
+    type:'bar',
+    data:{
+      labels:['$250/TRx'],
+      datasets:[
+        {label:'Actual', data:[0], backgroundColor:C.cnavy},
+        {label:'Projected', data:[10], backgroundColor:C.gray},
+      ]
+    },
+    options:{indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{position:'bottom'}}}
+  });
+
+  // ===================================================================
+  //  What-If Calculator
+  // ===================================================================
+  // Pay logic per IC plan component (Goal-based, Commission, Hybrid, Blended)
+  const COMPONENTS = {
+    A:   {label:'Product A — Goal-based',   target: 11250, goal: 127, type:'goal'},
+    B:   {label:'Product B — Commission',   target:  8000, goal:  20, type:'commission', commPerTrx: 200},
+    C:   {label:'Product C — Hybrid',       target:  5875, goal:  50, type:'hybrid'},
+    ALL: {label:'Total Plan — Blended',     target: 22500, goal: 127, type:'blended'},
+  };
+  let currentComponent = 'A';
+
+  function payForComponent(comp, attain, trx) {
+    if (comp.type === 'goal') {
+      if (attain < 80) return 0;
+      if (attain <= 100) return (attain - 80) * 2.5 + 50;
+      if (attain <= 130) return 100 + (attain - 100) * (200 - 100) / 30;
+      return 200;
+    }
+    if (comp.type === 'commission') {
+      // Tiered $/TRx commission (no curve, scales linearly to a cap)
+      return Math.min(200, (trx * comp.commPerTrx) / comp.target * 100);
+    }
+    if (comp.type === 'hybrid') {
+      if (attain < 70) return 0;
+      if (attain <= 100) return (attain - 70) / 30 * 80 + 20;   // 20% at 70%, 100% at 100%
+      if (attain <= 130) return 100 + (attain - 100) * 50 / 30; // up to 150%
+      return 150;
+    }
+    // blended — average curve weighted 40/35/25 (A/B/C)
+    if (attain < 80) return 0;
+    if (attain <= 100) return (attain - 80) * 2.5 + 50;
+    if (attain <= 130) return 100 + (attain - 100) * 100 / 30;
+    return 200;
+  }
+
+  function buildPayTable(comp) {
+    const rows = [];
+    for (let a = 50; a <= 150; a++) {
+      const trx = comp.goal * a / 100;
+      rows.push({attainment: a, payoutPct: payForComponent(comp, a, trx)});
+    }
+    return rows;
+  }
+
+  let PAY_TABLE = buildPayTable(COMPONENTS.A);
+  let QTR_GOAL = COMPONENTS.A.goal;
+  let TARGET   = COMPONENTS.A.target;
+
+  function renderPayTable() {
+    const body = document.getElementById('paytable-body');
+    body.innerHTML = '';
+    [60,70,80,85,90,95,100,105,110,115,120,130,140].forEach(a => {
+      const row = PAY_TABLE.find(r => r.attainment === a);
+      if (!row) return;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="center">${a}%</td><td class="center">${row.payoutPct.toFixed(1)}%</td><td class="center">$${(TARGET*row.payoutPct/100).toLocaleString(undefined,{maximumFractionDigits:0})}</td>`;
+      body.appendChild(tr);
+    });
+  }
+  renderPayTable();
+
+  function attToPay(att) {
+    return payForComponent(COMPONENTS[currentComponent], att, QTR_GOAL * att / 100);
+  }
+  function payToAtt(targetPay) {
+    // Numerical inverse via interpolation on PAY_TABLE
+    const tbl = PAY_TABLE;
+    if (targetPay <= tbl[0].payoutPct) return tbl[0].attainment;
+    for (let i = 0; i < tbl.length - 1; i++) {
+      if (tbl[i].payoutPct <= targetPay && targetPay <= tbl[i+1].payoutPct) {
+        const span = tbl[i+1].payoutPct - tbl[i].payoutPct || 1;
+        const t = (targetPay - tbl[i].payoutPct) / span;
+        return tbl[i].attainment + t * (tbl[i+1].attainment - tbl[i].attainment);
+      }
+    }
+    return tbl[tbl.length - 1].attainment;
+  }
+
+  let calcDriver = 'trx';
+  function setCalcDriver(d) {
+    calcDriver = d;
+    document.querySelectorAll('#driver-mode button').forEach(b =>
+      b.classList.toggle('active', b.dataset.driver === d));
+    document.getElementById('calc-trx').disabled         = d !== 'trx';
+    document.getElementById('calc-attain-input').disabled = d !== 'attain';
+    document.getElementById('calc-payout-input').disabled = d !== 'payout';
+    calcRecalc();
+  }
+
+  function calcRecalc() {
+    let trx, att, pay;
+    if (calcDriver === 'trx') {
+      trx = parseFloat(document.getElementById('calc-trx').value) || 0;
+      att = (trx / QTR_GOAL) * 100;
+      pay = attToPay(att);
+    } else if (calcDriver === 'attain') {
+      att = parseFloat(document.getElementById('calc-attain-input').value) || 0;
+      trx = QTR_GOAL * att / 100;
+      pay = attToPay(att);
+    } else {
+      pay = parseFloat(document.getElementById('calc-payout-input').value) || 0;
+      att = payToAtt(pay);
+      trx = QTR_GOAL * att / 100;
+    }
+    const earnings = TARGET * pay / 100;
+    if (calcDriver !== 'trx')    document.getElementById('calc-trx').value = trx.toFixed(1);
+    if (calcDriver !== 'attain') document.getElementById('calc-attain-input').value = att.toFixed(1);
+    if (calcDriver !== 'payout') document.getElementById('calc-payout-input').value = pay.toFixed(1);
+    document.getElementById('calc-earnings').textContent =
+      '$' + earnings.toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  document.getElementById('calc-trx').addEventListener('input', calcRecalc);
+  document.getElementById('calc-attain-input').addEventListener('input', calcRecalc);
+  document.getElementById('calc-payout-input').addEventListener('input', calcRecalc);
+  document.querySelectorAll('#driver-mode button').forEach(b =>
+    b.addEventListener('click', () => setCalcDriver(b.dataset.driver)));
+  calcRecalc();
+
+  function setPrefill(mode) {
+    document.querySelectorAll('#prefill-mode button').forEach(b =>
+      b.classList.toggle('active', b.dataset.prefill === mode));
+    if (mode === 'actual')    document.getElementById('calc-trx').value = 100;
+    if (mode === 'projected') document.getElementById('calc-trx').value = 138;
+    calcRecalc();
+  }
+  document.querySelectorAll('#prefill-mode button').forEach(b =>
+    b.addEventListener('click', () => setPrefill(b.dataset.prefill)));
+
+  function calcReverse() {
+    const target = parseFloat(document.getElementById('rev-target').value) || 0;
+    const reqPct = (target / TARGET) * 100;
+    let attainNeeded;
+    if (reqPct <= 50) attainNeeded = 80;
+    else if (reqPct <= 100) attainNeeded = 80 + (reqPct - 50) / 2.5;
+    else if (reqPct <= 200) attainNeeded = 100 + (reqPct - 100) * 30 / 100;
+    else attainNeeded = 130;
+    const trxNeeded = QTR_GOAL * attainNeeded / 100;
+    document.getElementById('rev-trx').textContent =
+      trxNeeded.toFixed(1) + ' TRx (' + attainNeeded.toFixed(1) + '% attainment)';
+  }
+
+  document.querySelectorAll('#calc-mode button').forEach(b =>
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#calc-mode button').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      document.getElementById('reverse-block').style.display =
+        b.dataset.mode === 'reverse' ? 'block' : 'none';
+    }));
+
+  // Pay curve chart (dynamic — rebuilt when component switches)
+  let payCurveChart = new Chart(document.getElementById('chart-paycurve'), {
+    type:'line',
+    data:{
+      labels:PAY_TABLE.map(r => r.attainment + '%'),
+      datasets:[{label:'% Payout', data:PAY_TABLE.map(r => r.payoutPct),
+        borderColor:C.navy, backgroundColor:'rgba(14,20,68,.06)', fill:true, tension:0.2, pointRadius:0}]
+    },
+    options:{responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{title:{display:true,text:'% Payout'}, suggestedMax:200},
+        x:{title:{display:true,text:'% Attainment'}, ticks:{maxTicksLimit:10}}
+      }}
+  });
+
+  function setComponent(key) {
+    currentComponent = key;
+    const comp = COMPONENTS[key];
+    PAY_TABLE = buildPayTable(comp);
+    QTR_GOAL = comp.goal;
+    TARGET = comp.target;
+    document.getElementById('kpi-target').textContent = '$' + comp.target.toLocaleString();
+    document.getElementById('kpi-goal').textContent = comp.goal.toFixed(1);
+    document.getElementById('kpi-component').textContent = comp.label;
+    document.getElementById('component-tag').textContent = comp.label;
+    document.querySelectorAll('#component-mode button').forEach(b =>
+      b.classList.toggle('active', b.dataset.component === key));
+    payCurveChart.data.labels = PAY_TABLE.map(r => r.attainment + '%');
+    payCurveChart.data.datasets[0].data = PAY_TABLE.map(r => r.payoutPct);
+    payCurveChart.update();
+    renderPayTable();
+    calcRecalc();
+  }
+  document.querySelectorAll('#component-mode button').forEach(b =>
+    b.addEventListener('click', () => setComponent(b.dataset.component)));
+
+  // ===================================================================
+  //  Annual Awards
+  // ===================================================================
+  const AWARDS = {
+    rep: [
+      {rank:1,  terr:'NP10202', rep:'Eric Jones',     reg:'Inland OC CA',  qtd:142, ytd:138, payout:24500},
+      {rank:2,  terr:'NP10102B',rep:'Chris Mueller',  reg:'Southern CA',   qtd:138, ytd:131, payout:23200},
+      {rank:3,  terr:'T01001',  rep:'John Doe',       reg:'Southern CA',   qtd:131, ytd:127, payout:22100, me:true},
+      {rank:4,  terr:'NP10103A',rep:'Hugh Grant',     reg:'Southern CA',   qtd:128, ytd:124, payout:21400},
+      {rank:5,  terr:'NP10401', rep:'Linda Park',     reg:'Arizona Metro', qtd:125, ytd:119, payout:20800},
+      {rank:6,  terr:'NP10301', rep:'Sara Connor',    reg:'Greater LA',    qtd:122, ytd:118, payout:20100},
+      {rank:7,  terr:'NP10501', rep:'Marco Rivera',   reg:'Mountain Desert',qtd:118,ytd:115, payout:19400},
+      {rank:8,  terr:'NP10701', rep:'Kira Yamada',    reg:'Rocky Mountain',qtd:116, ytd:112, payout:18900},
+      {rank:9,  terr:'NP10801', rep:'Brittany Owens', reg:'Great Plains',  qtd:114, ytd:111, payout:18400},
+      {rank:10, terr:'NP10103B',rep:'Julie Robinson', reg:'Southern CA',   qtd:112, ytd:108, payout:17900},
+    ],
+    dm: [
+      {rank:1, terr:'NP10100', rep:'Jane Smith',  reg:'Southern CA',    qtd:131, ytd:128, payout:38500, me:true},
+      {rank:2, terr:'NP10200', rep:'Alan Brooks', reg:'Inland OC CA',   qtd:128, ytd:124, payout:37000},
+      {rank:3, terr:'NP10400', rep:'Priya Mehta', reg:'Arizona Metro',  qtd:122, ytd:119, payout:35200},
+      {rank:4, terr:'NP10700', rep:'Liam Park',   reg:'Rocky Mountain', qtd:119, ytd:116, payout:34100},
+    ],
+    rd: [
+      {rank:1, terr:'NP10000', rep:'John Doe',      reg:'Southwest', qtd:103, ytd:104, payout:62000, me:true},
+      {rank:2, terr:'NP20000', rep:'Maya Patel',    reg:'Northeast', qtd:101, ytd:100, payout:58000},
+      {rank:3, terr:'NP30000', rep:'Thomas Reyes',  reg:'Central',   qtd: 98, ytd: 97, payout:54000},
+      {rank:4, terr:'NP40000', rep:'Sara Lin',      reg:'Pacific NW',qtd: 95, ytd: 94, payout:51000},
+    ],
+  };
+  // Top-N projected winners highlighted as "potential winners" per PRD should-have
+  const WINNER_THRESHOLD = {rep: 5, dm: 3, rd: 2};
+  function renderAwards(role) {
+    const tbody = document.querySelector('#awards-table tbody');
+    tbody.innerHTML = '';
+    const cutoff = WINNER_THRESHOLD[role] || 3;
+    AWARDS[role].forEach(r => {
+      const tr = document.createElement('tr');
+      const isWinner = r.rank <= cutoff;
+      if (isWinner) tr.classList.add('highlight');
+      const trophy = isWinner ? ' 🏆' : '';
+      const meTag  = r.me ? ' <span class="pill" style="background:var(--beghou-navy);color:#fff">You</span>' : '';
+      tr.innerHTML = `<td class="center"><strong>${r.rank}</strong>${trophy}</td><td>${r.terr}</td><td>${r.rep}${meTag}</td><td>${r.reg}</td>
+        <td class="right">${r.qtd}%</td><td class="right">${r.ytd}%</td>
+        <td class="right">$${r.payout.toLocaleString()}</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  renderAwards('rep');
+  document.getElementById('award-role').addEventListener('change', e => renderAwards(e.target.value));
+
+  // ===================================================================
+  //  Historical Archives
+  // ===================================================================
+  // Archive URLs are signed, role-scoped, and quarter-specific.
+  // Each URL includes a token that's validated server-side against the
+  // user's table-level access controls.
+  const ARCHIVES = [
+    {q:'2025 Q4', span:'Oct 1 — Dec 31, 2025', status:'completed', slug:'2025-q4'},
+    {q:'2025 Q3', span:'Jul 1 — Sep 30, 2025', status:'completed', slug:'2025-q3'},
+    {q:'2025 Q2', span:'Apr 1 — Jun 30, 2025', status:'completed', slug:'2025-q2'},
+    {q:'2025 Q1', span:'Jan 1 — Mar 31, 2025', status:'completed', slug:'2025-q1'},
+    {q:'2024 Q4', span:'Oct 1 — Dec 31, 2024', status:'locked',   slug:'2024-q4'},
+  ];
+  const archList = document.getElementById('archive-list');
+  ARCHIVES.forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'archive-row';
+    const url = a.status === 'completed'
+      ? `/arc/ic/scorecard/T01001/${a.slug}?token=u-johndoe-${a.slug}`
+      : null;
+    el.innerHTML = `
+      <div class="archive-meta">
+        <div>
+          <div class="archive-quarter">${a.q}</div>
+          <div class="archive-dates">${a.span}</div>
+          ${url ? `<div class="small" style="margin-top:4px;font-family:ui-monospace,Consolas,monospace;color:var(--muted)">${url}</div>` : ''}
+        </div>
+        <span class="badge ${a.status === 'completed' ? 'completed' : 'locked'}">
+          ${a.status === 'completed' ? '✓ Completed · role-scoped link' : '🔒 Beyond retention'}
+        </span>
+      </div>
+      ${url ? `<a class="btn" href="${url}" target="_blank">📄 View scorecard</a>` : `<button class="btn" disabled>🔒 Locked</button>`}`;
+    archList.appendChild(el);
+  });
+
+  // ===================================================================
+  //  Goal Refinement
+  // ===================================================================
+  const GOALS = [
+    {id:'NP10101', name:'San Diego S CA', rep:'Meg Smith',     prelim:145, refined:152, just:'Sustained Q1 growth', status:'review'},
+    {id:'NP10102', name:'San Diego N CA', rep:'Tom Davis',     prelim:180, refined:184, just:'New HCP onboarding',  status:'review'},
+    {id:'NP10103', name:'Escondido CA',   rep:'Hugh Grant',    prelim:226, refined:215, just:'Lost two key accounts', status:'review'},
+    {id:'NP10104', name:'Hawaii HI',      rep:'Brad Clarke',   prelim: 94, refined: 94, just:'',                    status:'draft'},
+    {id:'NP10105', name:'Inland OC CA',   rep:'Eric Jones',    prelim:154, refined:170, just:'Pulled-through formulary win', status:'review'},
+    {id:'NP10106', name:'Greater LA',     rep:'Chris Mueller', prelim:184, refined:184, just:'',                    status:'draft'},
+  ];
+  const gbody = document.getElementById('goals-table-body');
+  GOALS.forEach(g => {
+    const delta = ((g.refined - g.prelim) / g.prelim) * 100;
+    const deltaCls = Math.abs(delta) > 10 ? 'goal-delta over' : 'goal-delta';
+    const inputCls = Math.abs(delta) > 10 ? 'goal-input warn' : 'goal-input';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${g.id}</strong></td>
+      <td>${g.name}</td>
+      <td>${g.rep}</td>
+      <td class="right">${g.prelim}</td>
+      <td class="right"><input class="${inputCls}" value="${g.refined}" data-prelim="${g.prelim}"/></td>
+      <td class="right"><span class="${deltaCls}">${delta >= 0 ? '+' : ''}${delta.toFixed(1)}%</span></td>
+      <td>${g.just || '<span class="small">—</span>'}</td>
+      <td><span class="goal-status-pill ${g.status}">${g.status === 'review' ? 'In review' : 'Draft'}</span></td>`;
+    gbody.appendChild(tr);
+  });
+
+  gbody.addEventListener('input', e => {
+    if (!e.target.matches('input.goal-input')) return;
+    const tr = e.target.closest('tr');
+    const cells = tr.cells;
+    const prelim = parseFloat(e.target.dataset.prelim);
+    const refined = parseFloat(e.target.value) || 0;
+    const delta = ((refined - prelim) / prelim) * 100;
+    const span = cells[5].querySelector('span');
+    span.textContent = (delta >= 0 ? '+' : '') + delta.toFixed(1) + '%';
+    span.className = Math.abs(delta) > 10 ? 'goal-delta over' : 'goal-delta';
+    e.target.classList.toggle('warn', Math.abs(delta) > 10);
+  });
+
+  // Historic performance trend (Goal Refinement)
+  new Chart(document.getElementById('chart-historic'), {
+    type:'line',
+    data:{
+      labels:['Q1 24','Q2 24','Q3 24','Q4 24','Q1 25','Q2 25','Q3 25','Q4 25','Q1 26'],
+      datasets:[
+        {label:'Goal',   data:[120,124,128,132,134,138,142,144,148], borderColor:C.gray, fill:false, tension:0.3, pointRadius:2},
+        {label:'Actual', data:[118,121,131,135,131,140,148,151,152], borderColor:C.navy, backgroundColor:'rgba(14,20,68,.08)', fill:true, tension:0.3, pointRadius:3},
+        {label:'Refined H1\'26', data:[null,null,null,null,null,null,null,null,152], borderColor:C.pink, fill:false, pointRadius:6, pointBackgroundColor:C.pink, showLine:false},
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
+  });
+
+  // ===================================================================
+  //  Disputes resolution mix
+  // ===================================================================
+  new Chart(document.getElementById('chart-disputes'), {
+    type:'doughnut',
+    data:{
+      labels:['Goal adjusted','Data correction','Declined','Withdrawn'],
+      datasets:[{data:[9,3,2,1], backgroundColor:[C.navy, C.teal, C.pink, C.gray], borderWidth:0}]
+    },
+    options:{responsive:true, maintainAspectRatio:false, cutout:'60%',
+      plugins:{legend:{position:'bottom'}}}
+  });
+
+  // ===================================================================
+  //  Apply initial role permissions (default = Field Rep)
+  // ===================================================================
+  applyRolePermissions('Field Rep');
+
+  // ===================================================================
+  //  MBO blended payout chart
+  // ===================================================================
+  new Chart(document.getElementById('chart-blend'), {
+    type:'doughnut',
+    data:{
+      labels:['Quant attainment ($15,560)','MBO payout ($3,825)','Unattained ($3,115)'],
+      datasets:[{data:[15560,3825,3115], backgroundColor:[C.navy,C.pink,'#E0E0E8'], borderWidth:0}]
+    },
+    options:{responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{legend:{position:'bottom'}}}
+  });
+</script>
+</body>
+</html>
